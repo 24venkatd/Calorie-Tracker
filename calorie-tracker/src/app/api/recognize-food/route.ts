@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { imageUrl, fileName } = await request.json()
+    const { imageUrl } = await request.json()
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -25,15 +24,28 @@ export async function POST(request: NextRequest) {
       Analyze this food image and provide:
       1. The name of the food item
       2. An estimated calorie count for a typical serving
+      3. The following nutrients for a typical serving (in grams):
+         - protein
+         - fiber
+         - carbohydrates
+         - sugar
+         - fats
+         - saturated fat
       
       Please respond in JSON format:
       {
         "food_name": "food item name",
         "estimated_calories": number,
+        "protein": number,
+        "fiber": number,
+        "carbohydrates": number,
+        "sugar": number,
+        "fats": number,
+        "saturated_fat": number,
         "confidence": number (0-1)
       }
       
-      Be specific with food names and provide realistic calorie estimates.
+      Be specific with food names and provide realistic, evidence-based estimates for all nutrients.
     `
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -43,7 +55,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-vision-preview',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'user',
@@ -95,7 +107,7 @@ export async function POST(request: NextRequest) {
       } else {
         result = JSON.parse(content)
       }
-    } catch (parseError) {
+    } catch {
       console.error('Failed to parse OpenAI response:', content)
       return NextResponse.json(
         { error: 'Failed to parse analysis result' },
@@ -111,14 +123,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Ensure calories is a number and within reasonable range
+    // Ensure calories and nutrients are numbers and within reasonable range
     const calories = Math.max(0, Math.min(5000, Number(result.estimated_calories) || 0))
     const confidence = Math.max(0, Math.min(1, Number(result.confidence) || 0.5))
+    const protein = Math.max(0, Number(result.protein) || 0)
+    const fiber = Math.max(0, Number(result.fiber) || 0)
+    const carbohydrates = Math.max(0, Number(result.carbohydrates) || 0)
+    const sugar = Math.max(0, Number(result.sugar) || 0)
+    const fats = Math.max(0, Number(result.fats) || 0)
+    const saturated_fat = Math.max(0, Number(result.saturated_fat) || 0)
 
     return NextResponse.json({
       food_name: result.food_name,
       estimated_calories: Math.round(calories),
-      confidence: confidence
+      protein,
+      fiber,
+      carbohydrates,
+      sugar,
+      fats,
+      saturated_fat,
+      confidence
     })
 
   } catch (error) {

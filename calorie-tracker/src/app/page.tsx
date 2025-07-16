@@ -4,30 +4,28 @@ import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@/lib/supabase'
 import AuthComponent from '@/components/Auth'
 import Dashboard from '@/components/Dashboard'
+import { User } from '@/types/database'
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClientComponentClient()
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      setUser(user as User)
       setLoading(false)
     }
-
     getUser()
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
+        setUser(session?.user as User ?? null)
         setLoading(false)
       }
     )
-
     return () => subscription.unsubscribe()
-  }, [])
+  }, [supabase])
 
   if (loading) {
     return (

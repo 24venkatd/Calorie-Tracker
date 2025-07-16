@@ -2,10 +2,12 @@
 
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { createClientComponentClient } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 export default function AuthComponent() {
-  const supabase = createClientComponentClient()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+  const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   return (
     <div className="max-w-md mx-auto p-6">
@@ -18,7 +20,7 @@ export default function AuthComponent() {
           appearance={{ theme: ThemeSupa }}
           theme="light"
           providers={['google']}
-          redirectTo={`${window.location.origin}/dashboard`}
+          redirectTo={typeof window !== 'undefined' ? window.location.origin : ''}
         />
       </div>
     </div>
